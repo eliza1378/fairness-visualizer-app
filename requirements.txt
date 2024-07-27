@@ -1,1 +1,9 @@
 streamlit
+Genderize
+scholarly
+ethnicolr
+gender-guesser
+mpld3
+email2country
+geopandas
+geopy
