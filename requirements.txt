@@ -10,3 +10,4 @@ geopy
 seaborn
 numpy
 tensorflow
+pandas
