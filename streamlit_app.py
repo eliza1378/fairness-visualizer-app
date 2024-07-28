@@ -12,6 +12,10 @@ import geopandas as gpd
 import geopy
 from geopy.geocoders import Nominatim
 
+st.markdown("""
+<link rel="stylesheet" href="assets/css/button_style.css" type="text/css">
+""", unsafe_allow_html=True)
+
 locator = Nominatim(user_agent="bias-visualizer", timeout=20)
 
 ethnicityMap = {
@@ -90,7 +94,7 @@ def drawEthnicityDiffRatio(df, bin_width):
     st.components.v1.html(fig_html, height=600)
 
 # Main App
-st.write('# LLM Co-Authorship Bias Visualizer')
+st.write('# LLM Co-Authorship Fairness Visualizer')
 
 # Initialize session state for storing author names, DataFrame, and slider value
 if 'author_names' not in st.session_state:
@@ -109,7 +113,7 @@ if 'visualize' not in st.session_state:
 authorName = st.text_input('Author Name')
 
 # Button to add the entered author name to the list
-if st.button('Add Author'):
+if st.button('Add Author', type="primary"):
     if authorName:
         st.session_state.author_names.append(authorName)
     else:
