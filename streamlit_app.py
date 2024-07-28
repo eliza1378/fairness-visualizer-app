@@ -126,7 +126,7 @@ if st.session_state.author_names:
         st.write(name)
 
 # Button to visualize biases
-if st.button('Visualize Biases'):
+if st.button('Visualize Biases', type="primary"):
     df = st.session_state.df
     genderDetector = gender.Detector()
 
