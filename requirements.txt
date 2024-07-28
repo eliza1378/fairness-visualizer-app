@@ -7,7 +7,4 @@ mpld3
 email2country
 geopandas
 geopy
-<<<<<<< HEAD
-=======
 seaborn
->>>>>>> d6d6d01 (Edited app)
