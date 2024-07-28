@@ -9,5 +9,5 @@ geopandas
 geopy
 seaborn
 numpy
-tensorflow==2.16
+tensorflow~=2.16
 pandas
