@@ -110,12 +110,16 @@ if 'visualize' not in st.session_state:
     st.session_state.visualize = False
 
 # Text input for author name
-authorName = st.text_input('Author Name')
+authorName = st.text_input('Author Name', key="user_input")
+
+def clearInput():
+    st.session_state.authorName = authorName
+    st.session_state.user_input = ""
 
 # Button to add the entered author name to the list
-if st.button('Add Author', type="primary"):
-    if authorName:
-        st.session_state.author_names.append(authorName)
+if st.button('Add Author', type="primary", on_click=clearInput):
+    if st.session_state.authorName:
+        st.session_state.author_names.append(st.session_state.authorName)
     else:
         st.write('Please enter an author name before adding.')
 
