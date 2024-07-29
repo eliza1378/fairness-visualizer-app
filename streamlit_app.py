@@ -46,23 +46,24 @@ def affiliation2country(affiliation):
   return None
 
 def drawGenderDiffRatio(df, bin_width):
-    df["Gender Diff Ratio"] = 0
+    sf = df.copy(deep=False)
+    sf["Gender Diff Ratio"] = 0
     
-    for index, row in df.iterrows():
+    for index, row in sf.iterrows():
         scholarGenders = row["Co-authors’ genders (Google Scholar)"]
         scholarRatio = scholarGenders.count("female") / len(scholarGenders) if scholarGenders else 0
 
         aiGenders = row["Co-authors’ genders (OpenAI)"]
         aiRatio = aiGenders.count("female") / len(aiGenders) if aiGenders else 0
 
-        df.at[index, "Gender Diff Ratio"] = aiRatio - scholarRatio
+        sf.at[index, "Gender Diff Ratio"] = aiRatio - scholarRatio
 
-    data_range = df["Gender Diff Ratio"].max() - df["Gender Diff Ratio"].min()
+    data_range = sf["Gender Diff Ratio"].max() - sf["Gender Diff Ratio"].min()
     num_bins = int(data_range / bin_width)
     num_bins = max(1, num_bins)
 
     fig, ax = plt.subplots()
-    sns.histplot(data=df, x="Gender Diff Ratio", kde=True, color="palevioletred", bins=num_bins, ax=ax)
+    sns.histplot(data=sf, x="Gender Diff Ratio", kde=True, color="palevioletred", bins=num_bins, ax=ax)
     ax.set(xlabel='Gender Ratio Difference', ylabel='Number of Authors')
     ax.set_title('Gender Ratio Difference Between Google Scholar and LLM Co-Authors')
 
@@ -70,23 +71,24 @@ def drawGenderDiffRatio(df, bin_width):
     st.components.v1.html(fig_html, height=600)
 
 def drawEthnicityDiffRatio(df, bin_width):
-    df["Ethnicity Diff Ratio"] = 0
+    sf = df.copy(deep=False)
+    sf["Ethnicity Diff Ratio"] = 0
     
-    for index, row in df.iterrows():
+    for index, row in sf.iterrows():
         scholarEthnicities = row["Co-authors’ ethnicity (Google Scholar)"]
         scholarRatio = scholarEthnicities.count("white") / len(scholarEthnicities) if scholarEthnicities else 0
 
         aiEthnicities = row["Co-authors’ ethnicity (OpenAI)"]
         aiRatio = aiEthnicities.count("white") / len(aiEthnicities) if aiEthnicities else 0
 
-        df.at[index, "Ethnicity Diff Ratio"] = aiRatio - scholarRatio
+        sf.at[index, "Ethnicity Diff Ratio"] = aiRatio - scholarRatio
 
-    data_range = df["Ethnicity Diff Ratio"].max() - df["Ethnicity Diff Ratio"].min()
+    data_range = sf["Ethnicity Diff Ratio"].max() - sf["Ethnicity Diff Ratio"].min()
     num_bins = int(data_range / bin_width)
     num_bins = max(1, num_bins)
 
     fig, ax = plt.subplots()
-    sns.histplot(data=df, x="Ethnicity Diff Ratio", kde=True, color="mediumseagreen", bins=num_bins, ax=ax)
+    sns.histplot(data=sf, x="Ethnicity Diff Ratio", kde=True, color="mediumseagreen", bins=num_bins, ax=ax)
     ax.set(xlabel='Ethnicity Ratio Difference', ylabel='Number of Authors')
     ax.set_title('Ethnicity Ratio Difference Between Google Scholar and LLM Co-Authors')
 
@@ -123,11 +125,20 @@ if st.button('Add Author', type="primary", on_click=clearInput):
     else:
         st.write('Please enter an author name before adding.')
 
+
 # Display the list of added authors
 if st.session_state.author_names:
     st.write('Added Authors:')
     for name in st.session_state.author_names:
         st.write(name)
+
+def clearOutput():
+    st.session_state.author_names = []
+    st.session_state.df = pd.DataFrame(columns=['Author', 'Gender', 'Ethnicity', 'Co-authors’ names (Google Scholar)', 'Co-authors’ genders (Google Scholar)', 'Co-authors’ ethnicity (Google Scholar)', 'Co-authors’ countries (Google Scholar)', 'Co-authors’ names (OpenAI)', 'Co-authors’ genders (OpenAI)', 'Co-authors’ ethnicity (OpenAI)'])
+    st.empty()
+
+if st.button('Reset', type="primary", on_click=clearOutput):
+    pass
 
 # Button to visualize biases
 if st.button('Visualize Biases', type="primary"):
@@ -135,6 +146,8 @@ if st.button('Visualize Biases', type="primary"):
     genderDetector = gender.Detector()
 
     for authorName in st.session_state.author_names:
+        if authorName in df["Author"].to_list():
+            continue
         try:
             gender = genderDetector.get_gender(authorName.split()[0])
             ethnicity = predictEthnicity(authorName)
