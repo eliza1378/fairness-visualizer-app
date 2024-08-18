@@ -25,6 +25,16 @@ ethnicityMap = {
     "nh_white": "White"
 }
 
+def getEnglishNonEnglishList(countries):
+    englishCountries = ["United States", "United Kingdom", "Ireland", "Canada", "Australia"]
+    englishNonEnglishList = []
+    for country in countries:
+        if country in englishCountries:
+            englishNonEnglishList.append("English")
+        else:
+            englishNonEnglishList.append("Non-English")
+    return englishNonEnglishList
+
 def predictEthnicity(fullName):
     nameParts = fullName.split()
     firstName = nameParts[0]
@@ -76,21 +86,49 @@ def drawEthnicityDiffRatio(df, bin_width):
     
     for index, row in sf.iterrows():
         scholarEthnicities = row["Co-authors’ ethnicity (Google Scholar)"]
-        scholarRatio = scholarEthnicities.count("white") / len(scholarEthnicities) if scholarEthnicities else 0
+        scholarRatio = 1 - (scholarEthnicities.count("White") / len(scholarEthnicities) if scholarEthnicities else 0)
 
         aiEthnicities = row["Co-authors’ ethnicity (OpenAI)"]
-        aiRatio = aiEthnicities.count("white") / len(aiEthnicities) if aiEthnicities else 0
+        aiRatio = 1 - (aiEthnicities.count("White") / len(aiEthnicities) if aiEthnicities else 0)
 
         sf.at[index, "Ethnicity Diff Ratio"] = aiRatio - scholarRatio
 
     data_range = sf["Ethnicity Diff Ratio"].max() - sf["Ethnicity Diff Ratio"].min()
     num_bins = int(data_range / bin_width)
     num_bins = max(1, num_bins)
-
+    
     fig, ax = plt.subplots()
     sns.histplot(data=sf, x="Ethnicity Diff Ratio", kde=True, color="mediumseagreen", bins=num_bins, ax=ax)
     ax.set(xlabel='Ethnicity Ratio Difference', ylabel='Number of Authors')
     ax.set_title('Ethnicity Ratio Difference Between Google Scholar and LLM Co-Authors')
+
+    fig_html = mpld3.fig_to_html(fig)
+    st.components.v1.html(fig_html, height=600)
+
+def drawLanguageDiffRatio(df, bin_width):
+    sf = df.copy(deep=False)
+    sf["Language Diff Ratio"] = 0
+    
+    for index, row in sf.iterrows():
+        scholarCountries = row["Co-authors’ countries (Google Scholar)"]
+        scholarCountries = [x for x in scholarCountries if x is not None]
+        scholarCountries = getEnglishNonEnglishList(scholarCountries)
+        scholarRatio = 1 - (scholarCountries.count("English") / len(scholarCountries) if scholarCountries else 0)
+
+        aiCountries = row["Co-authors’ countries (OpenAI)"]
+        aiCountries = getEnglishNonEnglishList(aiCountries)
+        aiRatio = 1 - (aiCountries.count("English") / len(aiCountries) if aiCountries else 0)
+
+        sf.at[index, "Language Diff Ratio"] = aiRatio - scholarRatio
+
+    data_range = sf["Language Diff Ratio"].max() - sf["Language Diff Ratio"].min()
+    num_bins = int(data_range / bin_width)
+    num_bins = max(1, num_bins)
+
+    fig, ax = plt.subplots()
+    sns.histplot(data=sf, x="Language Diff Ratio", kde=True, color="gold", bins=num_bins, ax=ax)
+    ax.set(xlabel='Language Ratio Difference', ylabel='Number of Authors')
+    ax.set_title('Language Ratio Difference Between Google Scholar and LLM Co-Authors')
 
     fig_html = mpld3.fig_to_html(fig)
     st.components.v1.html(fig_html, height=600)
@@ -134,7 +172,7 @@ if st.session_state.author_names:
 
 def clearOutput():
     st.session_state.author_names = []
-    st.session_state.df = pd.DataFrame(columns=['Author', 'Gender', 'Ethnicity', 'Co-authors’ names (Google Scholar)', 'Co-authors’ genders (Google Scholar)', 'Co-authors’ ethnicity (Google Scholar)', 'Co-authors’ countries (Google Scholar)', 'Co-authors’ names (OpenAI)', 'Co-authors’ genders (OpenAI)', 'Co-authors’ ethnicity (OpenAI)'])
+    st.session_state.df = pd.DataFrame(columns=['Author', 'Gender', 'Ethnicity', 'Co-authors’ names (Google Scholar)', 'Co-authors’ genders (Google Scholar)', 'Co-authors’ ethnicity (Google Scholar)', 'Co-authors’ countries (Google Scholar)', 'Co-authors’ names (OpenAI)', 'Co-authors’ genders (OpenAI)', 'Co-authors’ ethnicity (OpenAI)', 'Co-authors’ countries (OpenAI)'])
     st.empty()
 
 if st.button('Reset', type="primary", on_click=clearOutput):
@@ -185,6 +223,7 @@ if st.button('Visualize Biases', type="primary"):
             aiCoauthors = ["Zahra Mozaffar", "Reza Alizadeh", "Sarah Williams"]
             aiGenders = []
             aiEthnicities = []
+            aiCountries = ["Iran", "Germany", "United States"]
 
             for coauthor in aiCoauthors:
                 aiGender = genderDetector.get_gender(coauthor.split()[0])
@@ -192,7 +231,7 @@ if st.button('Visualize Biases', type="primary"):
                 aiEthnicity = predictEthnicity(coauthor)
                 aiEthnicities.append(aiEthnicity)
 
-            df.loc[len(df)] = [authorName, gender, ethnicity, scholarCoauthors, scholarGenders, scholarEthnicities, scholarCountries, aiCoauthors, aiGenders, aiEthnicities]
+            df.loc[len(df)] = [authorName, gender, ethnicity, scholarCoauthors, scholarGenders, scholarEthnicities, scholarCountries, aiCoauthors, aiGenders, aiEthnicities, aiCountries]
                 
         except StopIteration:
             st.write(f'No authors found for the name "{authorName}".')
@@ -211,3 +250,4 @@ if 'visualize' in st.session_state and st.session_state.visualize and not st.ses
     st.dataframe(st.session_state.df)
     drawGenderDiffRatio(st.session_state.df, st.session_state.bin_width)
     drawEthnicityDiffRatio(st.session_state.df, st.session_state.bin_width)
+    drawLanguageDiffRatio(st.session_state.df, st.session_state.bin_width)
