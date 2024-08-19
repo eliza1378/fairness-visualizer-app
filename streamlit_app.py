@@ -80,7 +80,7 @@ def drawGenderDiffRatio(df, bin_width):
     ax.set_title('Gender Ratio Difference Between Google Scholar and LLM Co-Authors')
 
     fig_html = mpld3.fig_to_html(fig)
-    st.components.v1.html(fig_html, height=600)
+    st.components.v1.html(fig_html, height=500)
 
 def drawEthnicityDiffRatio(df, bin_width):
     sf = df.copy(deep=False)
@@ -105,7 +105,7 @@ def drawEthnicityDiffRatio(df, bin_width):
     ax.set_title('Ethnicity Ratio Difference Between Google Scholar and LLM Co-Authors')
 
     fig_html = mpld3.fig_to_html(fig)
-    st.components.v1.html(fig_html, height=600)
+    st.components.v1.html(fig_html, height=500)
 
 def drawLanguageDiffRatio(df, bin_width):
     sf = df.copy(deep=False)
@@ -133,24 +133,32 @@ def drawLanguageDiffRatio(df, bin_width):
     ax.set_title('Language Ratio Difference Between Google Scholar and LLM Co-Authors')
 
     fig_html = mpld3.fig_to_html(fig)
-    st.components.v1.html(fig_html, height=600)
+    st.components.v1.html(fig_html, height=500)
 
-def drawCoAuthorshipNet(src, targets, index):
-    net = Network(notebook=True, directed=True)
+def drawCoAuthorshipNet(src, targets, index, mode):
+    net = Network(notebook=True, directed=True, height='200px')
     net.add_node(src)
     for target in targets:
         net.add_node(target)
         net.add_edge(src, target)
     
-    fileName = "network" + str(index) + ".html"
+    fileName = mode + "Network" + str(index) + ".html"
     net.show(fileName)
-    HtmlFile = open(fileName, "r", encoding="utf-8")
-    st.components.v1.html(HtmlFile.read(), height=400)
+    #HtmlFile = open(fileName, "r", encoding="utf-8")
+    #st.components.v1.html(HtmlFile.read(), height=400)
 
-def drawCoAuthorshipNetByIndex(index):
-    fileName = "network" + str(index) + ".html"
-    HtmlFile = open(fileName, "r", encoding="utf-8")
-    st.components.v1.html(HtmlFile.read(), height=400)
+def drawCoAuthorshipNetByIndex(authorName, index):
+    scholarFileName = "scholar" + "Network" + str(index) + ".html"
+    aiFileName = "ai" + "Network" + str(index) + ".html"
+    scholarFile = open(scholarFileName, "r", encoding="utf-8")
+    aiFile = open(aiFileName, "r", encoding="utf-8")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(authorName + "'s Google Scholar Network")
+        st.components.v1.html(scholarFile.read(), height=240)
+    with col2:
+        st.write(authorName + "'s LLM-Constructed Network")
+        st.components.v1.html(aiFile.read(), height=240)
 
 # Main App
 st.write('# LLM Co-Authorship Fairness Visualizer')
@@ -160,7 +168,7 @@ if 'author_names' not in st.session_state:
     st.session_state.author_names = []
 
 if 'df' not in st.session_state:
-    st.session_state.df = pd.DataFrame(columns=['Author', 'Gender', 'Ethnicity', 'Co-authors’ names (Google Scholar)', 'Co-authors’ genders (Google Scholar)', 'Co-authors’ ethnicity (Google Scholar)', 'Co-authors’ countries (Google Scholar)', 'Co-authors’ names (OpenAI)', 'Co-authors’ genders (OpenAI)', 'Co-authors’ ethnicity (OpenAI)'])
+    st.session_state.df = pd.DataFrame(columns=['Author', 'Gender', 'Ethnicity', 'Co-authors’ names (Google Scholar)', 'Co-authors’ genders (Google Scholar)', 'Co-authors’ ethnicity (Google Scholar)', 'Co-authors’ countries (Google Scholar)', 'Co-authors’ names (OpenAI)', 'Co-authors’ genders (OpenAI)', 'Co-authors’ ethnicity (OpenAI)', 'Co-authors’ countries (OpenAI)'])
 
 if 'bin_width' not in st.session_state:
     st.session_state.bin_width = 0.12  # Default bin width
@@ -205,8 +213,8 @@ if st.button('Visualize Biases', type="primary"):
     for authorName in st.session_state.author_names:
         index = 0
         if authorName in df["Author"].to_list():
-            index = df["Author"].to_list().index(authorName)
-            drawCoAuthorshipNetByIndex(index)
+            #index = df["Author"].to_list().index(authorName)
+            #drawCoAuthorshipNetByIndex(index)
             continue
         else:
             index = len(df)
@@ -241,7 +249,7 @@ if st.button('Visualize Biases', type="primary"):
                       country = affiliation2country(affiliation)
                     scholarCountries.append(country)
 
-                drawCoAuthorshipNet(authorName, scholarCoauthors, index)
+                drawCoAuthorshipNet(authorName, scholarCoauthors, index, "scholar")
 
             else:
                 st.write(f'No co-authors found for {authorName} in Google Scholar.')
@@ -256,6 +264,8 @@ if st.button('Visualize Biases', type="primary"):
                 aiGenders.append(aiGender)
                 aiEthnicity = predictEthnicity(coauthor)
                 aiEthnicities.append(aiEthnicity)
+
+            drawCoAuthorshipNet(authorName, aiCoauthors, index, "ai")
 
             df.loc[len(df)] = [authorName, gender, ethnicity, scholarCoauthors, scholarGenders, scholarEthnicities, scholarCountries, aiCoauthors, aiGenders, aiEthnicities, aiCountries]
                 
@@ -274,6 +284,9 @@ st.session_state.bin_width = st.sidebar.slider('Bin Width', min_value=0.01, max_
 # Draw the plot if visualization button was pressed and DataFrame is not empty
 if 'visualize' in st.session_state and st.session_state.visualize and not st.session_state.df.empty:
     st.dataframe(st.session_state.df)
+    for index in range(len(st.session_state.df)):
+        authorName = st.session_state.df["Author"][index]
+        drawCoAuthorshipNetByIndex(authorName, index)
     drawGenderDiffRatio(st.session_state.df, st.session_state.bin_width)
     drawEthnicityDiffRatio(st.session_state.df, st.session_state.bin_width)
     drawLanguageDiffRatio(st.session_state.df, st.session_state.bin_width)
