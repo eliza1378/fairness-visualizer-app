@@ -11,6 +11,8 @@ from email2country import email2institution_country
 import geopandas as gpd
 import geopy
 from geopy.geocoders import Nominatim
+from pyvis.network import Network
+
 
 st.markdown("""
 <link rel="stylesheet" href="assets/css/button_style.css" type="text/css">
@@ -133,6 +135,23 @@ def drawLanguageDiffRatio(df, bin_width):
     fig_html = mpld3.fig_to_html(fig)
     st.components.v1.html(fig_html, height=600)
 
+def drawCoAuthorshipNet(src, targets, index):
+    net = Network(notebook=True, directed=True)
+    net.add_node(src)
+    for target in targets:
+        net.add_node(target)
+        net.add_edge(src, target)
+    
+    fileName = "network" + str(index) + ".html"
+    net.show(fileName)
+    HtmlFile = open(fileName, "r", encoding="utf-8")
+    st.components.v1.html(HtmlFile.read(), height=400)
+
+def drawCoAuthorshipNetByIndex(index):
+    fileName = "network" + str(index) + ".html"
+    HtmlFile = open(fileName, "r", encoding="utf-8")
+    st.components.v1.html(HtmlFile.read(), height=400)
+
 # Main App
 st.write('# LLM Co-Authorship Fairness Visualizer')
 
@@ -184,8 +203,13 @@ if st.button('Visualize Biases', type="primary"):
     genderDetector = gender.Detector()
 
     for authorName in st.session_state.author_names:
+        index = 0
         if authorName in df["Author"].to_list():
+            index = df["Author"].to_list().index(authorName)
+            drawCoAuthorshipNetByIndex(index)
             continue
+        else:
+            index = len(df)
         try:
             gender = genderDetector.get_gender(authorName.split()[0])
             ethnicity = predictEthnicity(authorName)
@@ -216,6 +240,8 @@ if st.button('Visualize Biases', type="primary"):
                     except Exception:
                       country = affiliation2country(affiliation)
                     scholarCountries.append(country)
+
+                drawCoAuthorshipNet(authorName, scholarCoauthors, index)
 
             else:
                 st.write(f'No co-authors found for {authorName} in Google Scholar.')
