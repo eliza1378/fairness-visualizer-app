@@ -7,6 +7,8 @@ import matplotlib.patches as mpatches
 import mpld3
 import streamlit.components.v1 as components
 import seaborn as sns
+import plotly.express as px
+
 
 def drawCountryMap(df):
     authorCountries = df["Country"].to_list()
@@ -185,6 +187,25 @@ def drawEthnicityPE(df):
     # Display in Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
+def drawGenderDiffRatio(df):
+   for index, row in df.iterrows():
+    scholarGenders = row["Co-authors’ genders (Google Scholar)"].split(", ")
+    scholarRatio = scholarGenders.count("Female") / len(scholarGenders)
+
+    gptGenders = row["Co-authors’ genders (OpenAI)"].split(", ")
+    gptRatio = gptGenders.count("Female") / len(gptGenders)
+
+    df.at[index, "Gender Diff Ratio"] = gptRatio - scholarRatio
+
+    fig = px.histogram(df, x="Gender Diff Ratio", nbins=10, color_discrete_sequence=['palevioletred'])
+    fig.update_layout(
+        xaxis_title='Gender Ratio Difference',
+        yaxis_title='Number of Authors',
+        bargap=0.2,
+        template='simple_white'
+    )
+
+    st.plotly_chart(fig)
 
 # Title of the app
 st.title('Fairness Visualizer App')
