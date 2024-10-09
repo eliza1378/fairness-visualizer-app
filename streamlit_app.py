@@ -8,6 +8,7 @@ import mpld3
 import streamlit.components.v1 as components
 import seaborn as sns
 import plotly.express as px
+from scipy.stats import gaussian_kde
 
 
 def drawCountryMap(df):
@@ -197,9 +198,63 @@ def drawGenderDiffRatio(df):
 
         df.at[index, "Gender Diff Ratio"] = gptRatio - scholarRatio
 
-    fig = px.histogram(df, x="Gender Diff Ratio", nbins=10, color_discrete_sequence=['palevioletred'])
+    fig = px.histogram(df, x="Gender Diff Ratio", nbins=17, color_discrete_sequence=['khaki'])
+    
+    # Calculate the density curve
+    x = df["Gender Diff Ratio"]
+    density = gaussian_kde(x)
+    x_vals = np.linspace(x.min(), x.max(), 1000)
+    density_vals = density(x_vals)
+    
+    # Add the density curve to the figure
+    fig.add_trace(go.Scatter(x=x_vals, y=density_vals * len(x) * 0.12, mode='lines', name='Density', line=dict(color='darkolivegreen')))
+    
     fig.update_layout(
+       title={
+            'text': 'Gender Ratio Difference Distribution between Google Scholar and LLM Co-Authors',
+            'x': 0.5,  # Center the title
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': {'size': 16}  # Adjust the font size as needed
+        },
         xaxis_title='Gender Ratio Difference',
+        yaxis_title='Number of Authors',
+        bargap=0.2,
+        template='simple_white'
+    )
+
+    st.plotly_chart(fig)
+
+def drawEthnicityDiffRatio(df):
+    for index, row in df.iterrows():
+        scholarEthnicity = row["Co-authors’ ethnicity (Google Scholar)"].split(", ")
+        scholarRatio = 1 - scholarEthnicity.count("White") / len(scholarEthnicity)
+
+        gptEthnicity = row["Co-authors’ ethnicity (OpenAI)"].split(", ")
+        gptRatio = 1 - gptEthnicity.count("White") / len(gptEthnicity)
+
+        df.at[index, "Ethnicity Diff Ratio"] = gptRatio - scholarRatio
+
+    fig = px.histogram(df, x="Ethnicity Diff Ratio", nbins=17, color_discrete_sequence=['lightpink'])
+    
+    # Calculate the density curve
+    x = df["Ethnicity Diff Ratio"]
+    density = gaussian_kde(x)
+    x_vals = np.linspace(x.min(), x.max(), 1000)
+    density_vals = density(x_vals)
+    
+    # Add the density curve to the figure
+    fig.add_trace(go.Scatter(x=x_vals, y=density_vals * len(x) * 0.12, mode='lines', name='Density', line=dict(color='darkmagenta')))
+    
+    fig.update_layout(
+       title={
+            'text': 'Ethnicity Ratio Difference Distribution between Google Scholar and LLM Co-Authors',
+            'x': 0.5,  # Center the title
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': {'size': 16}  # Adjust the font size as needed
+        },
+        xaxis_title='Ethnicity Ratio Difference',
         yaxis_title='Number of Authors',
         bargap=0.2,
         template='simple_white'
@@ -217,3 +272,4 @@ calculateRecallPrecision(df)
 drawEthnicityDP(df)
 drawEthnicityPE(df)
 drawGenderDiffRatio(df)
+drawEthnicityDiffRatio(df)
