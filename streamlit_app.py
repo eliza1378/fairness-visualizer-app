@@ -188,14 +188,14 @@ def drawEthnicityPE(df):
     st.plotly_chart(fig, use_container_width=True)
 
 def drawGenderDiffRatio(df):
-   for index, row in df.iterrows():
-    scholarGenders = row["Co-authors’ genders (Google Scholar)"].split(", ")
-    scholarRatio = scholarGenders.count("Female") / len(scholarGenders)
+    for index, row in df.iterrows():
+        scholarGenders = row["Co-authors’ genders (Google Scholar)"].split(", ")
+        scholarRatio = scholarGenders.count("Female") / len(scholarGenders)
 
-    gptGenders = row["Co-authors’ genders (OpenAI)"].split(", ")
-    gptRatio = gptGenders.count("Female") / len(gptGenders)
+        gptGenders = row["Co-authors’ genders (OpenAI)"].split(", ")
+        gptRatio = gptGenders.count("Female") / len(gptGenders)
 
-    df.at[index, "Gender Diff Ratio"] = gptRatio - scholarRatio
+        df.at[index, "Gender Diff Ratio"] = gptRatio - scholarRatio
 
     fig = px.histogram(df, x="Gender Diff Ratio", nbins=10, color_discrete_sequence=['palevioletred'])
     fig.update_layout(
