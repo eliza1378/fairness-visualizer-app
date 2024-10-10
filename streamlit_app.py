@@ -269,13 +269,13 @@ def main():
     calculateRecallPrecision(df)
     
     with st.sidebar:
-        if st.button("Data Distributions"):
+        if st.button("📊 Data Distributions"):
             st.session_state.page = "Data Distributions"
         
-        if st.button("Fairness Metrics"):
+        if st.button("📈 Fairness Metrics"):
             st.session_state.page = "Fairness Metrics"
         
-        if st.button("Gender/Ethnicity Biases"):
+        if st.button("⚖️ Gender/Ethnicity Biases"):
             st.session_state.page = "Gender/Ethnicity Biases"
     
     # Display the selected page's content
