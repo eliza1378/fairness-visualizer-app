@@ -262,14 +262,23 @@ def drawEthnicityDiffRatio(df):
 
     st.plotly_chart(fig)
 
-# Title of the app
-st.title('Fairness Visualizer App')
-
 df = pd.read_csv("data/anonymizedLLM.csv")
 
-drawCountryMap(df)
-calculateRecallPrecision(df)
-drawEthnicityDP(df)
-drawEthnicityPE(df)
-drawGenderDiffRatio(df)
-drawEthnicityDiffRatio(df)
+def main():
+    st.title('Fairness Visualizer App')
+    calculateRecallPrecision(df)
+    
+    with st.sidebar:
+        if st.button("Data Distributions"):
+            drawCountryMap(df)
+
+        if st.button("Fairness Metrics"):
+            drawEthnicityDP(df)
+            drawEthnicityPE(df)
+
+        if st.button("Gender/Ethnicity Biases"):
+            drawGenderDiffRatio(df)
+            drawEthnicityDiffRatio(df)
+
+if __name__ == "__main__":
+    main()
