@@ -270,15 +270,25 @@ def main():
     
     with st.sidebar:
         if st.button("Data Distributions"):
-            drawCountryMap(df)
-
+            st.session_state.page = "Data Distributions"
+        
         if st.button("Fairness Metrics"):
-            drawEthnicityDP(df)
-            drawEthnicityPE(df)
-
+            st.session_state.page = "Fairness Metrics"
+        
         if st.button("Gender/Ethnicity Biases"):
-            drawGenderDiffRatio(df)
-            drawEthnicityDiffRatio(df)
+            st.session_state.page = "Gender/Ethnicity Biases"
+    
+    # Display the selected page's content
+    if st.session_state.page == "Data Distributions":
+        drawCountryMap(df)
+    elif st.session_state.page == "Fairness Metrics":
+        drawEthnicityDP(df)
+        drawEthnicityPE(df)
+    elif st.session_state.page == "Gender/Ethnicity Biases":
+        drawGenderDiffRatio(df)
+        drawEthnicityDiffRatio(df)
 
 if __name__ == "__main__":
+    if "page" not in st.session_state:
+        st.session_state.page = "Data Distributions"
     main()
