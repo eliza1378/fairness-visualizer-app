@@ -9,6 +9,7 @@ import streamlit.components.v1 as components
 import seaborn as sns
 import plotly.express as px
 from scipy.stats import gaussian_kde
+import networkx as nx
 
 
 def drawCountryMap(df):
@@ -262,6 +263,101 @@ def drawEthnicityDiffRatio(df):
 
     st.plotly_chart(fig)
 
+def saveCoAuthorshipNets():
+    # Data for co-authorship networks
+    src = "Geoffrey Hinton"
+    scholarTargets = ["Terrence Sejnowski", "Vinod Nair", "George E. Dahl", "Abdelrahman Mohamed", "Radford Neal", 
+                      "Sidney Fels", "David C. Plaut", "Chris Williams", "Robert Tibshirani", "Demetri Terzopoulos", 
+                      "Steven L. Small"]
+    aiTargets = ["Yoshua Bengio", "Yann LeCun", "Ruslan Salakhutdinov", "Ilya Sutskever", "Simon Osindero", 
+                 "Alex Krizhevsky", "David Warde-Farley", "Tijmen Tieleman", "Volodymyr Mnih", "Richard Zemel", 
+                 "Raia Hadsell"]
+
+    # Create NetworkX graphs
+    scholarG = nx.DiGraph()  # Directed graph for scholar network
+    aiG = nx.DiGraph()       # Directed graph for AI network
+
+    # Add nodes and edges for scholar network
+    scholarG.add_node(src)
+    for target in scholarTargets:
+        scholarG.add_node(target)
+        scholarG.add_edge(src, target)
+
+    # Add nodes and edges for AI network
+    aiG.add_node(src)
+    for target in aiTargets:
+        aiG.add_node(target)
+        aiG.add_edge(src, target)
+
+    return scholarG, aiG
+
+def draw_network(graph, title, node_color='blue', label_color='black'):
+    pos = nx.spring_layout(graph)  # Positioning for nodes
+    edge_x = []
+    edge_y = []
+
+    # Drawing edges
+    for edge in graph.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_x.append(x0)
+        edge_x.append(x1)
+        edge_x.append(None)
+        edge_y.append(y0)
+        edge_y.append(y1)
+        edge_y.append(None)
+
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=1, color='#888'),
+        hoverinfo='none',  # Disable hover info for edges
+        mode='lines')
+
+    # Drawing nodes
+    node_x = []
+    node_y = []
+    for node in graph.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers+text',  # Show both markers and text
+        hoverinfo='none',  # Disable hover info for nodes
+        marker=dict(
+            showscale=False,  # Disable color scale (removes color bar)
+            color=node_color,  # Set custom node color
+            size=35,  # Increase size of nodes
+        ),
+        text=[f'{node}' for node in graph.nodes()],  # Add labels
+        textposition='middle center',  # Position labels in the center of nodes
+        textfont=dict(color=label_color)  # Change the color of labels
+    )
+
+    # Create the plotly figure
+    fig = go.Figure(data=[edge_trace, node_trace],
+                    layout=go.Layout(
+                        title=title,
+                        titlefont_size=16,
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=0, l=0, r=0, t=40),
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),  # Hide x-axis ticks and labels
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),  # Hide y-axis ticks and labels
+                   ))
+    return fig
+
+def drawCoAuthorshipNets():
+    scholarG, aiG = saveCoAuthorshipNets()  # Get the two co-authorship networks
+
+    with st.container():
+        fig_scholar = draw_network(scholarG, "Geoffrey Hinton's Google Scholar Network", "aquamarine")
+        st.plotly_chart(fig_scholar)
+
+        fig_ai = draw_network(aiG, "Geoffrey Hinton's LLM-Constructed Network", "plum")
+        st.plotly_chart(fig_ai)
+
 df = pd.read_csv("data/anonymizedLLM.csv")
 
 def main():
@@ -271,6 +367,9 @@ def main():
     with st.sidebar:
         if st.button("📊 Data Distributions"):
             st.session_state.page = "Data Distributions"
+
+        if st.button("🎓 Sample Networks"):
+            st.session_state.page = "Sample Networks"
         
         if st.button("📈 Fairness Metrics"):
             st.session_state.page = "Fairness Metrics"
@@ -281,6 +380,9 @@ def main():
     # Display the selected page's content
     if st.session_state.page == "Data Distributions":
         drawCountryMap(df)
+    if st.session_state.page == "Sample Networks":
+        saveCoAuthorshipNets()
+        drawCoAuthorshipNets()
     elif st.session_state.page == "Fairness Metrics":
         drawEthnicityDP(df)
         drawEthnicityPE(df)
